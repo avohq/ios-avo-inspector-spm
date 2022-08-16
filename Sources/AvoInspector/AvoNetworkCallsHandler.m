@@ -6,7 +6,6 @@
 //
 
 #import "AvoNetworkCallsHandler.h"
-#import "AvoInstallationId.h"
 #import "AvoUtils.h"
 #import "AvoInspector.h"
 #import "types/AvoObject.h"
@@ -19,6 +18,7 @@
 @property (readwrite, nonatomic) NSString *appVersion;
 @property (readwrite, nonatomic) NSString *libVersion;
 @property (readwrite, nonatomic) NSURLSession *urlSession;
+@property (readwrite, nonatomic) NSString *endpoint;
 
 @property (readwrite, nonatomic) double samplingRate;
 
@@ -26,9 +26,10 @@
 
 @implementation AvoNetworkCallsHandler
 
-- (instancetype) initWithApiKey: (NSString *) apiKey appName: (NSString *)appName appVersion: (NSString *) appVersion libVersion: (NSString *) libVersion env: (int) env {
+- (instancetype) initWithApiKey: (NSString *) apiKey appName: (NSString *)appName appVersion: (NSString *) appVersion libVersion: (NSString *) libVersion env: (int) env endpoint: (NSString *) endpoint {
     self = [super init];
     if (self) {
+        self.endpoint = endpoint;
         self.appVersion = appVersion;
         self.libVersion = libVersion;
         self.appName = appName;
@@ -128,7 +129,6 @@
     [body setValue:[AvoNetworkCallsHandler formatTypeToString:self.env] forKey:@"env"];
     [body setValue:@"ios" forKey:@"libPlatform"];
     [body setValue:[[NSUUID UUID] UUIDString] forKey:@"messageId"];
-    [body setValue:[[AvoInstallationId new] getInstallationId] forKey:@"trackingId"];
     [body setValue:[AvoUtils currentTimeAsISO8601UTCString] forKey:@"createdAt"];
 
     return body;
@@ -169,7 +169,7 @@
                                                           options:NSJSONWritingPrettyPrinted
                                                             error:&error];
     
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:@"https://api.avo.app/inspector/v1/track"]];
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:self.endpoint]];
     [request setHTTPMethod:@"POST"];
 
     [self writeCallHeader:request];
@@ -191,6 +191,10 @@
             NSNumber *rate = responseJSON[@"samplingRate"];
             if (rate != nil && weakSelf.samplingRate != [rate doubleValue]) {
                 weakSelf.samplingRate = [rate doubleValue];
+            }
+            
+            if ([AvoInspector isLogging]) {
+                NSLog(@"[avo] Avo Inspector: Successfully sent events.");
             }
         } else if ([AvoInspector isLogging]) {
             NSLog(@"[avo] Avo Inspector: Failed sending events. Will retry later.");
