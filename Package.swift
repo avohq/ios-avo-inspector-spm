@@ -18,7 +18,6 @@ let package = Package(
     targets: [
         .target(
             name: "AvoInspector",
-            path: "Sorces",
             resources: [.copy("PrivacyInfo.xcprivacy")]
         )
     ]
