@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - Enums
 
@@ -251,19 +254,17 @@ private class AvoStorageImpl: NSObject, AvoStorage {
     // MARK: - Notification Observers
 
     private func addObservers() {
-        // Intentionally commented out — matching the ObjC source.
-        // These notification observers are disabled; a future developer
-        // can re-enable them by uncommenting the lines below.
+        #if canImport(UIKit)
+        notificationCenter.addObserver(self,
+            selector: #selector(enterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil)
 
-        // notificationCenter.addObserver(self,
-        //     selector: #selector(enterBackground),
-        //     name: UIApplication.didEnterBackgroundNotification,
-        //     object: nil)
-        //
-        // notificationCenter.addObserver(self,
-        //     selector: #selector(enterForeground),
-        //     name: UIApplication.willEnterForegroundNotification,
-        //     object: nil)
+        notificationCenter.addObserver(self,
+            selector: #selector(enterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil)
+        #endif
     }
 
     // MARK: - Lifecycle

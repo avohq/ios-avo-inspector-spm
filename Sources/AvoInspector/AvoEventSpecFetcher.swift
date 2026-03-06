@@ -59,23 +59,23 @@ public typealias AvoEventSpecFetchCompletion = (AvoEventSpecResponse?) -> Void
                 let url = self.buildUrl(params)
 
                 if AvoInspector.isLogging() {
-                    NSLog("[Avo Inspector] Fetching event spec for event: %@ url: %@", params.eventName, url)
+                    NSLog("[avo] Avo Inspector: Fetching event spec for event: %@ url: %@", params.eventName, url)
                 }
 
                 let wireResponse = self.makeRequest(url)
 
                 if wireResponse == nil {
                     if AvoInspector.isLogging() {
-                        NSLog("[Avo Inspector] Failed to fetch event spec for: %@", params.eventName)
+                        NSLog("[avo] Avo Inspector: Failed to fetch event spec for: %@", params.eventName)
                     }
                 } else if !self.hasExpectedShape(wireResponse!) {
                     if AvoInspector.isLogging() {
-                        NSLog("[Avo Inspector] Invalid event spec response for: %@", params.eventName)
+                        NSLog("[avo] Avo Inspector: Invalid event spec response for: %@", params.eventName)
                     }
                 } else {
                     result = AvoEventSpecResponse(fromWire: wireResponse!)
                     if AvoInspector.isLogging() {
-                        NSLog("[Avo Inspector] Successfully fetched event spec for: %@ with %lu events",
+                        NSLog("[avo] Avo Inspector: Successfully fetched event spec for: %@ with %lu events",
                               params.eventName, UInt(result?.events.count ?? 0))
                     }
                 }
@@ -127,7 +127,7 @@ public typealias AvoEventSpecFetchCompletion = (AvoEventSpecResponse?) -> Void
 
             if let error = error {
                 if AvoInspector.isLogging() {
-                    NSLog("[Avo Inspector] Network error occurred: %@", error.localizedDescription)
+                    NSLog("[avo] Avo Inspector: Network error occurred: %@", error.localizedDescription)
                 }
                 return
             }
@@ -135,7 +135,7 @@ public typealias AvoEventSpecFetchCompletion = (AvoEventSpecResponse?) -> Void
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 if AvoInspector.isLogging() {
                     let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    NSLog("[Avo Inspector] Request failed with status: %ld", statusCode)
+                    NSLog("[avo] Avo Inspector: Request failed with status: %ld", statusCode)
                 }
                 return
             }
@@ -146,11 +146,11 @@ public typealias AvoEventSpecFetchCompletion = (AvoEventSpecResponse?) -> Void
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     wireResponse = AvoEventSpecResponseWire(dictionary: json)
                 } else if AvoInspector.isLogging() {
-                    NSLog("[Avo Inspector] Failed to parse response: not a dictionary")
+                    NSLog("[avo] Avo Inspector: Failed to parse response: not a dictionary")
                 }
             } catch {
                 if AvoInspector.isLogging() {
-                    NSLog("[Avo Inspector] Failed to parse response: %@", error.localizedDescription)
+                    NSLog("[avo] Avo Inspector: Failed to parse response: %@", error.localizedDescription)
                 }
             }
         }

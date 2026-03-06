@@ -150,7 +150,7 @@ import Foundation
 
             if error != nil {
                 self?.lock.lock()
-                self?.events.insert(contentsOf: sendingEvents, at: 0)
+                self?.events.append(contentsOf: sendingEvents)
                 self?.lock.unlock()
             }
         }
