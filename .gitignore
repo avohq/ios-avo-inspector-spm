@@ -6,5 +6,6 @@ xcuserdata/
 DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 /Carthage
-/Tests/
+# Tests were previously gitignored when they lived in the cocoapods repo.
+# Now that this is the primary repo, tests are tracked here.
 /Cartfile*

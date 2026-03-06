@@ -1,12 +1,13 @@
 {
-  "globalIterations": 5,
+  "globalIterations": 6,
   "maxIterations": 22,
   "storyAttempts": {
     "story-1-package-and-types": 1,
     "story-2-core-utilities": 1,
     "story-3-schema-and-dedup": 1,
     "story-4-encryption": 1,
-    "story-5-networking-batching-validation": 1
+    "story-5-networking-batching-validation": 1,
+    "story-6-inspector-main": 1
   },
-  "lastUpdated": "2026-03-06T00:10:00Z"
+  "lastUpdated": "2026-03-06T00:15:00Z"
 }
