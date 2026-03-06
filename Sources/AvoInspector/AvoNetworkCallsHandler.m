@@ -11,8 +11,7 @@
 #import "AvoAnonymousId.h"
 #import "AvoEventSpecFetchTypes.h"
 #import "AvoEncryption.h"
-#import "types/AvoList.h"
-#import "types/AvoObject.h"
+#import "AvoInspector-Swift.h"
 
 @interface AvoNetworkCallsHandler()
 

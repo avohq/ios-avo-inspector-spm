@@ -1,0 +1,407 @@
+{
+  "featureName": "spm-swift-migration",
+  "branchName": "fester/spm-swift-migration",
+  "baseBranch": "main",
+  "createdAt": "2026-03-06",
+  "specPath": "planning/spm-swift-migration/spec.md",
+  "reviewPath": "planning/spm-swift-migration/spec-review.md",
+  "maxIterations": 22,
+  "stories": [
+    {
+      "id": "story-1-package-and-types",
+      "title": "Package Infrastructure and Type System",
+      "description": "Update Package.swift for iOS 13+ and Swift-only target with testTarget. Create all 9 type system Swift files (AvoEventSchemaType base class + 6 leaf types + AvoList + AvoObject). Delete the types/ subdirectory ObjC files (18 .h/.m files). AvoEventSchemaType provides name(), isEqual(_:), hash, description. AvoList.subtypes is NSMutableSet, AvoObject.fields is NSMutableDictionary. AvoObject.name() uses guard/as? for error tolerance. All classes have @objc public declarations inheriting from NSObject or AvoEventSchemaType.",
+      "approach": "general-purpose",
+      "acceptanceCriteria": [
+        "Package.swift contains .iOS(.v13) and a testTarget named AvoInspectorTests",
+        "All 9 type Swift files exist in Sources/AvoInspector/",
+        "Every type class has @objc public class declaration inheriting from NSObject or AvoEventSchemaType",
+        "AvoEventSchemaType has name(), isEqual(_:), hash, description implementations",
+        "AvoList.subtypes is NSMutableSet and AvoObject.fields is NSMutableDictionary",
+        "AvoObject.name() uses guard/as? (not force-unwraps) for error tolerance",
+        "No .h or .m files remain in Sources/AvoInspector/types/",
+        "swift build succeeds"
+      ],
+      "priority": "p0",
+      "dependsOn": [],
+      "estimatedFiles": [
+        "Package.swift",
+        "Sources/AvoInspector/AvoEventSchemaType.swift",
+        "Sources/AvoInspector/AvoInt.swift",
+        "Sources/AvoInspector/AvoFloat.swift",
+        "Sources/AvoInspector/AvoBoolean.swift",
+        "Sources/AvoInspector/AvoString.swift",
+        "Sources/AvoInspector/AvoNull.swift",
+        "Sources/AvoInspector/AvoUnknownType.swift",
+        "Sources/AvoInspector/AvoList.swift",
+        "Sources/AvoInspector/AvoObject.swift"
+      ],
+      "qualityChecks": [
+        {
+          "command": "swift build",
+          "required": true
+        }
+      ],
+      "status": "pending",
+      "testPattern": "Type correctness verified in Story 7 (SimpleTypeSchemaExtractionTests, DictionarySchemaExtractionTests, ListSchemaExtractionTests)"
+    },
+    {
+      "id": "story-2-core-utilities",
+      "title": "Core Utilities (Storage, Guid, Utils, AnonymousId)",
+      "description": "Migrate the small utility modules: AvoStorage (protocol with @objc(setItem::) annotation), AvoGuid (UUID wrapper), AvoUtils (ISO8601 date formatting with en_US_POSIX locale), AvoAnonymousId (NSLock-based thread safety replacing @synchronized, storage key AvoInspectorAnonymousId preserved). Delete corresponding ObjC files.",
+      "approach": "general-purpose",
+      "acceptanceCriteria": [
+        "AvoStorage protocol has @objc(setItem::) annotation on setItem method",
+        "AvoAnonymousId uses NSLock for thread safety",
+        "Storage key AvoInspectorAnonymousId is preserved",
+        "AvoUtils.currentTimeAsISO8601UTCString() uses en_US_POSIX locale and UTC timezone",
+        "No ObjC utility files remain",
+        "swift build succeeds"
+      ],
+      "priority": "p0",
+      "dependsOn": [
+        "story-1-package-and-types"
+      ],
+      "estimatedFiles": [
+        "Sources/AvoInspector/AvoStorage.swift",
+        "Sources/AvoInspector/AvoGuid.swift",
+        "Sources/AvoInspector/AvoUtils.swift",
+        "Sources/AvoInspector/AvoAnonymousId.swift"
+      ],
+      "qualityChecks": [
+        {
+          "command": "swift build",
+          "required": true
+        }
+      ],
+      "status": "pending",
+      "testPattern": "AvoAnonymousIdTests (Story 9), AvoAnonymousIdThreadSafetyTests (Story 11)"
+    },
+    {
+      "id": "story-3-schema-and-dedup",
+      "title": "Schema Extraction and Deduplication",
+      "description": "Migrate AvoSchemaExtractor with careful type detection: CFBooleanGetTypeID check before NSNumber, objCType-based int/float detection (only i/s/q for int, no l), NSNull/String/Array/Set/Dictionary handling, non-string key support. Migrate AvoDeduplicator with serial DispatchQueue replacing @synchronized, static let singleton, and 0.3-second stale event threshold.",
+      "approach": "general-purpose",
+      "acceptanceCriteria": [
+        "Boolean detection uses CFGetTypeID(obj as CFTypeRef) == CFBooleanGetTypeID() before NSNumber check",
+        "objCType mapping: i/s/q -> AvoInt; c -> AvoString; d/f and other -> AvoFloat",
+        "No l (long) in AvoInt mapping",
+        "Empty nested dictionaries produce AvoObject with empty fields",
+        "AvoDeduplicator uses serial DispatchQueue for synchronized access",
+        "clearOldEvents uses 0.3-second threshold",
+        "swift build succeeds"
+      ],
+      "priority": "p0",
+      "dependsOn": [
+        "story-1-package-and-types"
+      ],
+      "estimatedFiles": [
+        "Sources/AvoInspector/AvoSchemaExtractor.swift",
+        "Sources/AvoInspector/AvoDeduplicator.swift"
+      ],
+      "qualityChecks": [
+        {
+          "command": "swift build",
+          "required": true
+        }
+      ],
+      "status": "pending",
+      "testPattern": "SimpleTypeSchemaExtractionTests, ListSchemaExtractionTests, DictionarySchemaExtractionTests, DeduplicatorTests (Story 7)"
+    },
+    {
+      "id": "story-4-encryption",
+      "title": "Encryption (CryptoKit + v0x01 Wire Format)",
+      "description": "Complete rewrite of AvoEncryption using CryptoKit. Implements v0x01 wire format: version byte 0x01, 65-byte ephemeral EC public key (uncompressed), 12-byte nonce, 16-byte auth tag, N-byte ciphertext. Uses SecKey for EC operations (key generation, ECDH, import/export) and CryptoKit AES.GCM.seal for encryption. SHA256 KDF via CryptoKit. Preserves secp256r1 compressed key decompression with big-number arithmetic. Eliminates all CommonCrypto references.",
+      "approach": "general-purpose",
+      "acceptanceCriteria": [
+        "import CryptoKit present, no CommonCrypto anywhere in Sources/",
+        "Version byte is 0x01",
+        "Nonce is 12 bytes (CryptoKit AES.GCM.Nonce)",
+        "Wire format: [0x01][65-byte pubkey][12-byte nonce][16-byte tag][ciphertext]",
+        "KDF is SHA256(shared_secret) via CryptoKit",
+        "Compressed key decompression preserves secp256r1 curve math",
+        "encrypt() returns nil for nil/empty inputs",
+        "swift build succeeds"
+      ],
+      "priority": "p0",
+      "dependsOn": [
+        "story-1-package-and-types"
+      ],
+      "estimatedFiles": [
+        "Sources/AvoInspector/AvoEncryption.swift"
+      ],
+      "qualityChecks": [
+        {
+          "command": "swift build",
+          "required": true
+        }
+      ],
+      "status": "pending",
+      "testPattern": "AvoEncryptionTests, AvoEncryptionIntegrationTests (Story 10)"
+    },
+    {
+      "id": "story-5-networking-batching-validation",
+      "title": "Networking, Batching, and Event Validation",
+      "description": "Migrate AvoNetworkCallsHandler (completion-handler networking, encryption integration, sampling), AvoBatcher (event batching with NSUserDefaults persistence, 1000-event cap, background/foreground), AvoEventValidator (ReDoS protection with isPatternPotentiallyDangerous and safeNumberOfMatches using shared static serial queue and semaphore timeout), AvoEventSpecFetcher (semaphore-based sync requests with deadlock prevention), AvoEventSpecCache (NSLock-based LRU cache), and AvoEventSpecFetchTypes (all wire/internal types with field mappings). Delete corresponding ObjC files.",
+      "approach": "general-purpose",
+      "acceptanceCriteria": [
+        "Storage keys AvoBatcherSuiteKey and AvoBatcherCacheKey preserved in AvoBatcher",
+        "Event cap of 1000 preserved",
+        "safeNumberOfMatches dispatches onto static serial queue com.avo.inspector.regex with DispatchSemaphore timeout",
+        "isPatternPotentiallyDangerous checks for nested quantifiers",
+        "AvoEventSpecFetcher uses semaphore-based sync request with dispatchPrecondition(condition: .notOnQueue(.main))",
+        "AvoEventSpecCache uses NSLock for thread safety",
+        "No async/await or Combine imports",
+        "swift build succeeds"
+      ],
+      "priority": "p0",
+      "dependsOn": [
+        "story-1-package-and-types",
+        "story-4-encryption"
+      ],
+      "estimatedFiles": [
+        "Sources/AvoInspector/AvoNetworkCallsHandler.swift",
+        "Sources/AvoInspector/AvoBatcher.swift",
+        "Sources/AvoInspector/AvoEventValidator.swift",
+        "Sources/AvoInspector/AvoEventSpecFetcher.swift",
+        "Sources/AvoInspector/AvoEventSpecCache.swift",
+        "Sources/AvoInspector/AvoEventSpecFetchTypes.swift"
+      ],
+      "qualityChecks": [
+        {
+          "command": "swift build",
+          "required": true
+        }
+      ],
+      "status": "pending",
+      "testPattern": "BatchingTests, NetworkCallsHandlerTests, SamplingTests, AvoEventValidatorTests, AvoEventSpecFetcherTests, AvoEventSpecCacheTests (Stories 8, 9, 10)"
+    },
+    {
+      "id": "story-6-inspector-main",
+      "title": "Main Inspector Class and ObjC File Cleanup",
+      "description": "Migrate the main AvoInspector class including AvoInspectorEnv enum (prod=0, dev=1, staging=2), AvoVisualInspectorType enum with @objc(Bar) and @objc(Bubble) case annotations, Inspector protocol conforming to NSObjectProtocol, AvoStorageImpl private class using UserDefaults.standard, all public initializers including init(apiKey:envInt:) with uintValue and .dev fallback, the complete fetch-validate-send flow (fetchAndValidateAsync, handleBranchChangeAndCache with NSLock, sendEventWithValidation), conditional initialization of eventSpecFetcher/eventSpecCache, commented-out notification observers, internal dependency injection seams for testing, and libVersion 4.0.0. Delete all remaining ObjC files and include/ directory.",
+      "approach": "general-purpose",
+      "acceptanceCriteria": [
+        "AvoInspectorEnv raw values: prod=0, dev=1, staging=2",
+        "AvoVisualInspectorType has @objc(Bar) and @objc(Bubble) case annotations",
+        "Inspector protocol conforms to NSObjectProtocol",
+        "AvoStorageImpl is private, uses UserDefaults.standard",
+        "init(apiKey:envInt:) uses uintValue with .dev fallback",
+        "eventSpecFetchTimeout constant is 5.0",
+        "Conditional initialization of eventSpecFetcher/eventSpecCache based on publicEncryptionKey, env, and streamId",
+        "handleBranchChangeAndCache uses NSLock or objc_sync for thread safety",
+        "addObservers notification registrations remain commented out",
+        "libVersion is 4.0.0",
+        "find Sources/AvoInspector -name *.h -o -name *.m returns zero results",
+        "find Sources/AvoInspector -type d -name include -o -name types returns zero results",
+        "swift build succeeds"
+      ],
+      "priority": "p0",
+      "dependsOn": [
+        "story-2-core-utilities",
+        "story-3-schema-and-dedup",
+        "story-5-networking-batching-validation"
+      ],
+      "estimatedFiles": [
+        "Sources/AvoInspector/AvoInspector.swift"
+      ],
+      "qualityChecks": [
+        {
+          "command": "swift build",
+          "required": true
+        }
+      ],
+      "status": "pending",
+      "testPattern": "InitializationTests, TrackTests, LogsTests, SessionTests, SessionBetweenRestartsTests, EnvironmentMappingTests (Stories 7, 8)"
+    },
+    {
+      "id": "story-7-tests-schema-core",
+      "title": "Port SPM Test Files -- Schema and Core Tests",
+      "description": "Port 7 schema/core test files from SPM repo ObjC Specta/Expecta to Swift XCTest: SimpleTypeSchemaExtractionTests, DictionarySchemaExtractionTests, ListSchemaExtractionTests, DeduplicatorTests, InitializationTests, EnvironmentMappingTests, LogsTests. Create test directory structure Tests/AvoInspectorTests/. Delete all existing ObjC test files. Create test doubles (MockNetworkCallsHandler, MockBatcher, MockStorage). Add Bool/char objCType tests (review issue 1.1), AvoObject.name() guard fallback test (review issue 3.1), nondeterministic iteration order handling (review issue 3.2), behavioral parity tests for NSNumber subclasses and single-element collections, and test_initWithEnvInt_mapsToCorrectEnv.",
+      "approach": "general-purpose",
+      "acceptanceCriteria": [
+        "7 Swift test files exist in Tests/AvoInspectorTests/",
+        "No .m files remain in Tests/",
+        "test_initWithEnvInt_mapsToCorrectEnv tests NSNumber(value:1) -> .dev and NSNumber(value:0) -> .prod",
+        "Bool/char test: NSNumber(value: true) -> AvoBoolean, NSNumber(value: Int8(65)) -> AvoString",
+        "AvoObject.name() guard fallback test: non-AvoEventSchemaType value in fields is skipped without crash",
+        "Nondeterministic iteration order handled via single-element collections or set-based assertions",
+        "Behavioral parity tests for NSConstantIntegerNumber, NSConstantDoubleNumber, single-element collections",
+        "swift build succeeds",
+        "swift test passes for these test files"
+      ],
+      "priority": "p1",
+      "dependsOn": [
+        "story-6-inspector-main"
+      ],
+      "estimatedFiles": [
+        "Tests/AvoInspectorTests/SimpleTypeSchemaExtractionTests.swift",
+        "Tests/AvoInspectorTests/DictionarySchemaExtractionTests.swift",
+        "Tests/AvoInspectorTests/ListSchemaExtractionTests.swift",
+        "Tests/AvoInspectorTests/DeduplicatorTests.swift",
+        "Tests/AvoInspectorTests/InitializationTests.swift",
+        "Tests/AvoInspectorTests/EnvironmentMappingTests.swift",
+        "Tests/AvoInspectorTests/LogsTests.swift"
+      ],
+      "qualityChecks": [
+        {
+          "command": "swift build",
+          "required": true
+        },
+        {
+          "command": "swift test",
+          "required": true
+        }
+      ],
+      "status": "pending",
+      "testPattern": "XCTestCase classes with test_ method naming"
+    },
+    {
+      "id": "story-8-tests-track-batch-session",
+      "title": "Port SPM Test Files -- Track, Batching, Session, Sampling",
+      "description": "Port remaining 6 SPM repo test files: TrackTests, BatchingTests, NetworkCallsHandlerTests, SamplingTests, SessionTests, SessionBetweenRestartsTests. Includes MockNetworkCallsHandler, MockBatcher, MockEventSpecFetcher, MockEventSpecCache test doubles. TrackTests includes all 7 validation flow test cases: cache hit with valid spec sends validated event, cache hit with nil spec falls through to batcher, cache miss with fetch success sends validated event, cache miss with fetch failure falls through, branch change clears cache, no-fetcher falls through, and avoFunctionEventId extraction.",
+      "approach": "general-purpose",
+      "acceptanceCriteria": [
+        "6 Swift test files created in Tests/AvoInspectorTests/",
+        "MockNetworkCallsHandler captures callInspectorWithBatchBody and reportValidatedEvent calls",
+        "MockBatcher captures handleTrackSchema calls",
+        "TrackTests includes all 7 validation flow test cases",
+        "test_avoFunctionTrackSchemaFromEvent_extractsEventIdAndHash verifies key extraction",
+        "swift test passes for these test files"
+      ],
+      "priority": "p1",
+      "dependsOn": [
+        "story-7-tests-schema-core"
+      ],
+      "estimatedFiles": [
+        "Tests/AvoInspectorTests/TrackTests.swift",
+        "Tests/AvoInspectorTests/BatchingTests.swift",
+        "Tests/AvoInspectorTests/NetworkCallsHandlerTests.swift",
+        "Tests/AvoInspectorTests/SamplingTests.swift",
+        "Tests/AvoInspectorTests/SessionTests.swift",
+        "Tests/AvoInspectorTests/SessionBetweenRestartsTests.swift"
+      ],
+      "qualityChecks": [
+        {
+          "command": "swift build",
+          "required": true
+        },
+        {
+          "command": "swift test",
+          "required": true
+        }
+      ],
+      "status": "pending",
+      "testPattern": "XCTestCase classes with test doubles (subclass overrides)"
+    },
+    {
+      "id": "story-9-tests-cocoapods",
+      "title": "Port Cocoapods-Only Test Files",
+      "description": "Port 4 cocoapods-only test files (non-encryption) from /Users/alexverein/code/avo/ios-avo-inspector/Example/Tests/: AvoAnonymousIdTests, AvoEventSpecCacheTests, AvoEventSpecFetcherTests, AvoEventValidatorTests. AvoEventValidatorTests includes all 6 ReDoS protection tests: dangerous pattern detection for nested quantifiers, safe pattern acceptance, correct match count, NSNotFound on timeout (0.001s), fail-open behavior, and concurrent safeNumberOfMatches (50 iterations with 0.5s timeout per review issue 4.1). Selector name change for safeNumberOfMatches acknowledged per review issue 1.2.",
+      "approach": "general-purpose",
+      "acceptanceCriteria": [
+        "4 Swift test files created",
+        "test_isPatternPotentiallyDangerous_detectsNestedQuantifiers tests (a+)+, (a+)*, ([a-z]+)*",
+        "test_isPatternPotentiallyDangerous_allowsSafePatterns tests [a-z]+, \\d{3}-\\d{4}",
+        "test_safeNumberOfMatches_returnsCorrectCount verifies count of 2 for [0-9]+ in abc 123 def 456",
+        "test_safeNumberOfMatches_returnsNSNotFoundOnTimeout uses 0.001s timeout",
+        "test_failOpenBehavior_skipsConstraintOnTimeout verifies fail-open",
+        "test_concurrentSafeNumberOfMatches_doesNotDeadlock uses 50 iterations with 0.5s timeout",
+        "swift test passes for these test files"
+      ],
+      "priority": "p1",
+      "dependsOn": [
+        "story-7-tests-schema-core"
+      ],
+      "estimatedFiles": [
+        "Tests/AvoInspectorTests/AvoAnonymousIdTests.swift",
+        "Tests/AvoInspectorTests/AvoEventSpecCacheTests.swift",
+        "Tests/AvoInspectorTests/AvoEventSpecFetcherTests.swift",
+        "Tests/AvoInspectorTests/AvoEventValidatorTests.swift"
+      ],
+      "qualityChecks": [
+        {
+          "command": "swift build",
+          "required": true
+        },
+        {
+          "command": "swift test",
+          "required": true
+        }
+      ],
+      "status": "pending",
+      "testPattern": "XCTestCase classes porting from Specta/Expecta ObjC"
+    },
+    {
+      "id": "story-10-tests-encryption",
+      "title": "Port Encryption Test Files",
+      "description": "Port 2 encryption test files from cocoapods (/Users/alexverein/code/avo/ios-avo-inspector/Example/Tests/AvoEncryptionTests.m and AvoEncryptionIntegrationTests.m), updated for v0x01 wire format. Test decryption helper uses CryptoKit (SHA256.hash for KDF, AES.GCM.open for decryption). Wire format validation: version byte 0x01, 12-byte nonce at offset 66, auth tag at offset 78, ciphertext at offset 94, minimum 95 bytes. Round-trip tests for string/integer/double/boolean values. Compressed key decompression round-trip test. Port generateTestPrivateKey() and publicKeyHexFromPrivateKey(_:) helpers.",
+      "approach": "general-purpose",
+      "acceptanceCriteria": [
+        "2 Swift test files created",
+        "Test decryption helper checks version byte 0x01",
+        "Wire format offsets: pubkey [1,66), nonce [66,78), tag [78,94), ciphertext [94,...)",
+        "Round-trip test: decrypt(encrypt(hello), privateKey) == hello",
+        "Compressed key decompression round-trip test exists",
+        "generateTestPrivateKey() and publicKeyHexFromPrivateKey(_:) helpers ported",
+        "swift test passes for these test files"
+      ],
+      "priority": "p1",
+      "dependsOn": [
+        "story-9-tests-cocoapods"
+      ],
+      "estimatedFiles": [
+        "Tests/AvoInspectorTests/AvoEncryptionTests.swift",
+        "Tests/AvoInspectorTests/AvoEncryptionIntegrationTests.swift"
+      ],
+      "qualityChecks": [
+        {
+          "command": "swift build",
+          "required": true
+        },
+        {
+          "command": "swift test",
+          "required": true
+        }
+      ],
+      "status": "pending",
+      "testPattern": "CryptoKit-based test decryption helper, SecKey test key generation"
+    },
+    {
+      "id": "story-11-tests-thread-safety",
+      "title": "Thread Safety Tests",
+      "description": "Create 3 new thread-safety test files validating NSLock/serial-queue replacements for @synchronized. Uses DispatchQueue.concurrentPerform with 50-100 iterations. AvoAnonymousIdThreadSafetyTests: concurrent get returns consistent value, concurrent set/get doesn't crash, concurrent clear/get doesn't crash. AvoDeduplicatorThreadSafetyTests: concurrent shouldRegisterEvent doesn't crash, concurrent clearOldEvents interleaved doesn't crash. AvoEventSpecCacheThreadSafetyTests: concurrent get/set/contains doesn't crash, concurrent clear/set doesn't crash. Final validation that total test file count is exactly 23.",
+      "approach": "general-purpose",
+      "acceptanceCriteria": [
+        "3 Swift test files created",
+        "AvoAnonymousIdThreadSafetyTests: concurrent access returns consistent value, concurrent set/get doesnt crash, concurrent clear/get doesnt crash",
+        "AvoDeduplicatorThreadSafetyTests: concurrent shouldRegisterEvent doesnt crash, concurrent clearOldEvents interleaved doesnt crash",
+        "AvoEventSpecCacheThreadSafetyTests: concurrent get/set/contains doesnt crash, concurrent clear/set doesnt crash",
+        "All tests use DispatchQueue.concurrentPerform with 50+ iterations",
+        "swift test passes for these test files",
+        "Total test file count: find Tests/AvoInspectorTests -name *.swift | wc -l returns exactly 23"
+      ],
+      "priority": "p1",
+      "dependsOn": [
+        "story-9-tests-cocoapods"
+      ],
+      "estimatedFiles": [
+        "Tests/AvoInspectorTests/AvoAnonymousIdThreadSafetyTests.swift",
+        "Tests/AvoInspectorTests/AvoDeduplicatorThreadSafetyTests.swift",
+        "Tests/AvoInspectorTests/AvoEventSpecCacheThreadSafetyTests.swift"
+      ],
+      "qualityChecks": [
+        {
+          "command": "swift build",
+          "required": true
+        },
+        {
+          "command": "swift test",
+          "required": true
+        }
+      ],
+      "status": "pending",
+      "testPattern": "Concurrent access via DispatchQueue.concurrentPerform, pass = no crash/hang"
+    }
+  ]
+}

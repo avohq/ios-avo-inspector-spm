@@ -6,15 +6,7 @@
 //
 
 #import "AvoSchemaExtractor.h"
-#import "types/AvoEventSchemaType.h"
-#import "types/AvoList.h"
-#import "types/AvoObject.h"
-#import "types/AvoInt.h"
-#import "types/AvoFloat.h"
-#import "types/AvoBoolean.h"
-#import "types/AvoString.h"
-#import "types/AvoUnknownType.h"
-#import "types/AvoNull.h"
+#import "AvoInspector-Swift.h"
 
 @implementation AvoSchemaExtractor
 
