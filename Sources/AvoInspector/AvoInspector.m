@@ -9,8 +9,6 @@
 #import "AvoInspector-Swift.h"
 #import "AvoNetworkCallsHandler.h"
 #import "AvoBatcher.h"
-#import "AvoDeduplicator.h"
-#import "AvoSchemaExtractor.h"
 #import "AvoEventSpecFetcher.h"
 #import "AvoEventSpecFetchTypes.h"
 #import "AvoEventSpecCache.h"

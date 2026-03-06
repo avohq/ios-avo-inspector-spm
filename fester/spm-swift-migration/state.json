@@ -1,6 +1,8 @@
 {
-  "globalIterations": 0,
+  "globalIterations": 1,
   "maxIterations": 22,
-  "storyAttempts": {},
-  "lastUpdated": "2026-03-06T00:00:00Z"
+  "storyAttempts": {
+    "story-1-package-and-types": 1
+  },
+  "lastUpdated": "2026-03-06T00:01:00Z"
 }
