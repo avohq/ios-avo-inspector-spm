@@ -269,15 +269,11 @@ private class AvoStorageImpl: NSObject, AvoStorage {
     // MARK: - Lifecycle
 
     @objc public func enterBackground() {
-        do {
-            avoBatcher.enterBackground()
-        }
+        avoBatcher.enterBackground()
     }
 
     @objc public func enterForeground() {
-        do {
-            avoBatcher.enterForeground()
-        }
+        avoBatcher.enterForeground()
     }
 
     deinit {
@@ -369,14 +365,6 @@ private class AvoStorageImpl: NSObject, AvoStorage {
                                       eventId: String?,
                                       eventHash: String?,
                                       eventProperties: [String: Any]?) {
-        for (_, value) in schema {
-            if !(value is AvoEventSchemaType) {
-                NSLog("[avo] Schema types should be of type AvoEventSchemaType. Provided %@",
-                      String(describing: type(of: value)))
-                return
-            }
-        }
-
         if let eventProperties = eventProperties, !eventProperties.isEmpty {
             avoBatcher.handleTrackSchema(eventName, schema: schema, eventId: eventId,
                                           eventHash: eventHash, eventProperties: eventProperties)
@@ -502,7 +490,11 @@ private class AvoStorageImpl: NSObject, AvoStorage {
             NSLog("[avo] Avo Inspector: Sending validated event %@", eventName)
         }
 
-        networkCallsHandler.reportValidatedEvent(body as! [String: Any])
+        guard let bodyDict = body as? [String: Any] else {
+            NSLog("[avo] Avo Inspector: Failed to cast validated event body to [String: Any]")
+            return
+        }
+        networkCallsHandler.reportValidatedEvent(bodyDict)
     }
 
     // MARK: - Error Logging

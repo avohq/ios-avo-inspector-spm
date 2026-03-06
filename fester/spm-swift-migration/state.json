@@ -1,5 +1,5 @@
 {
-  "globalIterations": 9,
+  "globalIterations": 11,
   "maxIterations": 22,
   "storyAttempts": {
     "story-1-package-and-types": 1,
@@ -10,7 +10,9 @@
     "story-6-inspector-main": 1,
     "story-7-tests-schema-core": 1,
     "story-8-tests-track-batch-session": 1,
-    "story-9-tests-cocoapods": 1
+    "story-9-tests-cocoapods": 1,
+    "story-10-tests-encryption": 1,
+    "story-11-tests-thread-safety": 1
   },
-  "lastUpdated": "2026-03-06T00:25:00Z"
+  "lastUpdated": "2026-03-06T00:30:00Z"
 }

@@ -11,6 +11,7 @@ import Foundation
     private var endpoint: String
     private var publicEncryptionKey: String?
     private var samplingRate: Double = 1.0
+    private let samplingRateLock = NSLock()
     private var urlSession: URLSession
 
     @objc public init(apiKey: String, appName: String, appVersion: String,
@@ -228,7 +229,10 @@ import Foundation
         body["appName"] = appName
         body["appVersion"] = appVersion
         body["libVersion"] = libVersion
-        body["samplingRate"] = NSNumber(value: samplingRate)
+        samplingRateLock.lock()
+        let currentRate = samplingRate
+        samplingRateLock.unlock()
+        body["samplingRate"] = NSNumber(value: currentRate)
         body["sessionId"] = ""
         body["trackingId"] = ""
         body["anonymousId"] = AvoAnonymousId.anonymousId()
@@ -248,7 +252,11 @@ import Foundation
 
     @objc public func callInspectorWithBatchBody(_ batchBody: [Any],
                                                   completionHandler: @escaping (Error?) -> Void) {
-        if drand48() > samplingRate {
+        samplingRateLock.lock()
+        let currentSamplingRate = samplingRate
+        samplingRateLock.unlock()
+
+        if drand48() > currentSamplingRate {
             if AvoInspector.isLogging() {
                 NSLog("[avo] Avo Inspector: Last event schema dropped due to sampling rate")
             }
@@ -274,7 +282,12 @@ import Foundation
             return
         }
 
-        var request = URLRequest(url: URL(string: endpoint)!)
+        guard let url = URL(string: endpoint) else {
+            NSLog("[avo] Avo Inspector: Invalid endpoint URL: %@", endpoint)
+            return
+        }
+
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         writeCallHeader(&request)
         request.httpBody = bodyData
@@ -289,9 +302,10 @@ import Foundation
                 guard let data = data else { return }
 
                 if let responseJSON = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let rate = responseJSON["samplingRate"] as? Double,
-                   self?.samplingRate != rate {
+                   let rate = responseJSON["samplingRate"] as? Double {
+                    self?.samplingRateLock.lock()
                     self?.samplingRate = rate
+                    self?.samplingRateLock.unlock()
                 }
 
                 if AvoInspector.isLogging() {
@@ -317,7 +331,12 @@ import Foundation
         do {
             let bodyData = try JSONSerialization.data(withJSONObject: [body], options: [])
 
-            var request = URLRequest(url: URL(string: endpoint)!)
+            guard let url = URL(string: endpoint) else {
+                NSLog("[avo] Avo Inspector: Invalid endpoint URL: %@", endpoint)
+                return
+            }
+
+            var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.timeoutInterval = 5.0
             writeCallHeader(&request)
@@ -348,7 +367,8 @@ import Foundation
         case 1: return "dev"
         case 2: return "staging"
         default:
-            fatalError("Unexpected FormatType.")
+            NSLog("[avo] Avo Inspector: WARNING - Unexpected FormatType %d, defaulting to dev", formatType)
+            return "dev"
         }
     }
 

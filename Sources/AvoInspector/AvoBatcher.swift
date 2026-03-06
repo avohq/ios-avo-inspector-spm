@@ -111,7 +111,9 @@ import Foundation
         lock.unlock()
 
         let now = Date().timeIntervalSince1970
+        lock.lock()
         let timeSinceLastFlushAttempt = now - batchFlushAttemptTime
+        lock.unlock()
 
         let sendBySize = batchSize % Int(AvoInspector.getBatchSize()) == 0
         let sendByTime = timeSinceLastFlushAttempt >= Double(AvoInspector.getBatchFlushSeconds())
@@ -135,9 +137,8 @@ import Foundation
             return
         }
 
-        batchFlushAttemptTime = Date().timeIntervalSince1970
-
         lock.lock()
+        batchFlushAttemptTime = Date().timeIntervalSince1970
         let sendingEvents = events
         events = [Any]()
         lock.unlock()
