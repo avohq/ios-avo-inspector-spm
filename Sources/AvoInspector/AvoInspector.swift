@@ -226,6 +226,28 @@ private class AvoStorageImpl: NSObject, AvoStorage {
         super.init()
     }
 
+    // Internal init with injectable dependencies including event spec — used by validation flow tests
+    internal init(apiKey: String, env: AvoInspectorEnv, storage: AvoStorage,
+                  networkCallsHandler: AvoNetworkCallsHandler,
+                  batcher: AvoBatcher,
+                  deduplicator: AvoDeduplicator,
+                  eventSpecFetcher: AvoEventSpecFetcher?,
+                  eventSpecCache: AvoEventSpecCache?) {
+        self.env = env
+        self.apiKey = apiKey
+        self.appName = Bundle.main.infoDictionary?[kCFBundleIdentifierKey as String] as? String ?? ""
+        self.appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        self.libVersion = "4.0.0"
+        self.avoSchemaExtractor = AvoSchemaExtractor()
+        self.notificationCenter = NotificationCenter.default
+        self.networkCallsHandler = networkCallsHandler
+        self.avoBatcher = batcher
+        self.avoDeduplicator = deduplicator
+        self.eventSpecFetcher = eventSpecFetcher
+        self.eventSpecCache = eventSpecCache
+        super.init()
+    }
+
     // MARK: - Notification Observers
 
     private func addObservers() {
