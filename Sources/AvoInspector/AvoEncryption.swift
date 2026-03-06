@@ -10,6 +10,7 @@ import Foundation
 import CryptoKit
 import Security
 
+@available(iOS 13.0, macOS 10.15, watchOS 6.0, tvOS 13.0, *)
 @objc public class AvoEncryption: NSObject {
 
     // MARK: - Constants

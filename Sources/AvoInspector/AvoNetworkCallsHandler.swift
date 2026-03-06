@@ -389,9 +389,11 @@ import Foundation
                let dictValue = value as? [String: Any] {
                 addEncryptedValues(children, eventProperties: dictValue, publicEncryptionKey: publicEncryptionKey)
             } else if !propertyType.hasPrefix("list") {
-                if let jsonValue = jsonStringifyValue(value),
-                   let encrypted = AvoEncryption.encrypt(jsonValue, recipientPublicKeyHex: publicEncryptionKey) {
-                    prop["encryptedPropertyValue"] = encrypted
+                if #available(iOS 13.0, macOS 10.15, watchOS 6.0, tvOS 13.0, *) {
+                    if let jsonValue = jsonStringifyValue(value),
+                       let encrypted = AvoEncryption.encrypt(jsonValue, recipientPublicKeyHex: publicEncryptionKey) {
+                        prop["encryptedPropertyValue"] = encrypted
+                    }
                 }
             }
         }
