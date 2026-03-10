@@ -28,10 +28,8 @@ import Foundation
         if let number = obj as? NSNumber {
             let objCType = String(cString: number.objCType)
             switch objCType {
-            case "i", "s", "q":
+            case "c", "i", "s", "l", "q", "C", "I", "S", "L", "Q":
                 return AvoInt()
-            case "c":
-                return AvoString()
             case "d", "f":
                 return AvoFloat()
             default:

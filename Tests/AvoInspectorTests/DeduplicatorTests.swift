@@ -48,30 +48,30 @@ final class DeduplicatorTests: XCTestCase {
         XCTAssertFalse(manualSchemaTrack)
     }
 
-    func test_inspectorDeduplicates_manualThenAvoFunction() {
+    func test_inspectorDeduplicates_avoFunctionThenManual_firstAvoFunction() {
         let params = makeTestParams()
         let sut = AvoInspector(apiKey: "apiKey", env: .dev)
 
-        let manualTrack = sut.avoFunctionTrackSchemaFromEvent("Test 0", eventParams: NSMutableDictionary(dictionary: params))
-        let avoFunctionTrack = sut.trackSchema(fromEvent: "Test 0", eventParams: params)
-        let manualTrackAgain = sut.avoFunctionTrackSchemaFromEvent("Test 0", eventParams: NSMutableDictionary(dictionary: params))
-
-        XCTAssertFalse(manualTrack.isEmpty)
-        XCTAssertTrue(avoFunctionTrack.isEmpty)
-        XCTAssertFalse(manualTrackAgain.isEmpty)
-    }
-
-    func test_inspectorDeduplicates_avoFunctionThenManual() {
-        let params = makeTestParams()
-        let sut = AvoInspector(apiKey: "apiKey", env: .dev)
-
-        let avoFunctionTrack = sut.trackSchema(fromEvent: "Test 0", eventParams: params)
-        let manualTrack = sut.avoFunctionTrackSchemaFromEvent("Test 0", eventParams: NSMutableDictionary(dictionary: params))
-        let avoFunctionTrackAgain = sut.trackSchema(fromEvent: "Test 0", eventParams: params)
+        let avoFunctionTrack = sut.avoFunctionTrackSchemaFromEvent("Test 0", eventParams: NSMutableDictionary(dictionary: params))
+        let manualTrack = sut.trackSchema(fromEvent: "Test 0", eventParams: params)
+        let avoFunctionTrackAgain = sut.avoFunctionTrackSchemaFromEvent("Test 0", eventParams: NSMutableDictionary(dictionary: params))
 
         XCTAssertFalse(avoFunctionTrack.isEmpty)
         XCTAssertTrue(manualTrack.isEmpty)
         XCTAssertFalse(avoFunctionTrackAgain.isEmpty)
+    }
+
+    func test_inspectorDeduplicates_manualThenAvoFunction_firstManual() {
+        let params = makeTestParams()
+        let sut = AvoInspector(apiKey: "apiKey", env: .dev)
+
+        let manualTrack = sut.trackSchema(fromEvent: "Test 0", eventParams: params)
+        let avoFunctionTrack = sut.avoFunctionTrackSchemaFromEvent("Test 0", eventParams: NSMutableDictionary(dictionary: params))
+        let manualTrackAgain = sut.trackSchema(fromEvent: "Test 0", eventParams: params)
+
+        XCTAssertFalse(manualTrack.isEmpty)
+        XCTAssertTrue(avoFunctionTrack.isEmpty)
+        XCTAssertFalse(manualTrackAgain.isEmpty)
     }
 
     func test_allowsManualTrack2SameEvents() {

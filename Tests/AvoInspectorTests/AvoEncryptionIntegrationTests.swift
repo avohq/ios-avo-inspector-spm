@@ -90,7 +90,10 @@ final class AvoEncryptionIntegrationTests: XCTestCase {
 
         let properties = body["eventProperties"] as? NSArray
         XCTAssertNotNil(properties)
-        let prop = properties![0] as! NSDictionary
+        guard let prop = properties?.firstObject as? NSDictionary else {
+            XCTFail("Expected first property to be NSDictionary")
+            return
+        }
         XCTAssertNotNil(prop["encryptedPropertyValue"])
     }
 

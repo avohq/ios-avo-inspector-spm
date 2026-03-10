@@ -260,6 +260,7 @@ import Foundation
             if AvoInspector.isLogging() {
                 NSLog("[avo] Avo Inspector: Last event schema dropped due to sampling rate")
             }
+            completionHandler(nil)
             return
         }
 
@@ -279,11 +280,13 @@ import Foundation
         }
 
         guard let bodyData = try? JSONSerialization.data(withJSONObject: batchBody, options: .prettyPrinted) else {
+            completionHandler(nil)
             return
         }
 
         guard let url = URL(string: endpoint) else {
             NSLog("[avo] Avo Inspector: Invalid endpoint URL: %@", endpoint)
+            completionHandler(nil)
             return
         }
 
@@ -297,11 +300,21 @@ import Foundation
 
     private func sendHttpRequest(_ request: URLRequest,
                                   completionHandler: @escaping (Error?) -> Void) {
-        let task = urlSession.dataTask(with: request) { [weak self] data, _, error in
+        let task = urlSession.dataTask(with: request) { [weak self] data, response, error in
             if error == nil {
-                guard let data = data else { return }
+                if let http = response as? HTTPURLResponse,
+                   !(200...299).contains(http.statusCode) {
+                    if AvoInspector.isLogging() {
+                        NSLog("[avo] Avo Inspector: Failed sending events. HTTP status: %d", http.statusCode)
+                    }
+                    let httpError = NSError(domain: "AvoInspector.Network", code: http.statusCode,
+                                            userInfo: [NSLocalizedDescriptionKey: "HTTP \(http.statusCode)"])
+                    completionHandler(httpError)
+                    return
+                }
 
-                if let responseJSON = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                if let data = data,
+                   let responseJSON = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                    let rate = responseJSON["samplingRate"] as? Double {
                     self?.samplingRateLock.lock()
                     self?.samplingRate = rate
@@ -342,10 +355,15 @@ import Foundation
             writeCallHeader(&request)
             request.httpBody = bodyData
 
-            let task = urlSession.dataTask(with: request) { _, _, taskError in
+            let task = urlSession.dataTask(with: request) { _, response, taskError in
                 if let taskError = taskError {
                     if AvoInspector.isLogging() {
                         NSLog("[avo] Avo Inspector: Failed to send validated event: %@", taskError.localizedDescription)
+                    }
+                } else if let http = response as? HTTPURLResponse,
+                          !(200...299).contains(http.statusCode) {
+                    if AvoInspector.isLogging() {
+                        NSLog("[avo] Avo Inspector: Failed to send validated event. HTTP status: %d", http.statusCode)
                     }
                 } else if AvoInspector.isLogging() {
                     NSLog("[avo] Avo Inspector: Successfully sent validated event.")

@@ -14,6 +14,8 @@ final class SessionBetweenRestartsTests: XCTestCase {
     }
 
     func test_eventsPersistedBetweenSessions() {
+        let originalBatchSize = AvoInspector.getBatchSize()
+        defer { AvoInspector.setBatchSize(originalBatchSize) }
         // Set large batch size to prevent auto-sending during the test
         AvoInspector.setBatchSize(1000)
 

@@ -85,15 +85,18 @@ final class AvoEventSpecCacheTests: XCTestCase {
         // or by using a workaround.
         // The ObjC test backdated entry.timestamp by 61000ms.
         // We'll use reflection to access the private cache dict.
+        var modifiedEntry = false
         let mirror = Mirror(reflecting: cache!)
         for child in mirror.children {
             if child.label == "cache",
                let internalCache = child.value as? [String: AvoEventSpecCacheEntry] {
                 if let entry = internalCache["key1"] {
                     entry.timestamp = entry.timestamp - 61_000
+                    modifiedEntry = true
                 }
             }
         }
+        XCTAssertTrue(modifiedEntry, "Failed to access internal cache entry for TTL simulation - test infrastructure broken")
 
         XCTAssertFalse(cache.contains("key1"), "Entry should be expired after TTL")
         XCTAssertNil(cache.get("key1"), "Expired entry should return nil")
@@ -112,15 +115,18 @@ final class AvoEventSpecCacheTests: XCTestCase {
         XCTAssertEqual(cache.size(), 50)
 
         // Backdate key0 to make it the oldest via lastAccessed
+        var modifiedEviction = false
         let mirror = Mirror(reflecting: cache!)
         for child in mirror.children {
             if child.label == "cache",
                let internalCache = child.value as? [String: AvoEventSpecCacheEntry] {
                 if let entry = internalCache["key0"] {
                     entry.lastAccessed = entry.lastAccessed - 10_000
+                    modifiedEviction = true
                 }
             }
         }
+        XCTAssertTrue(modifiedEviction, "Failed to access internal cache entry for eviction simulation - test infrastructure broken")
 
         // Add one more entry to trigger eviction
         cache.set("key50", spec: spec)

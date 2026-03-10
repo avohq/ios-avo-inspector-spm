@@ -3,12 +3,18 @@ import XCTest
 
 final class AvoAnonymousIdTests: XCTestCase {
 
+    private var originalAnonymousId: String?
+
     override func setUp() {
         super.setUp()
+        originalAnonymousId = AvoAnonymousId.anonymousId()
         AvoAnonymousId.clearCache()
     }
 
     override func tearDown() {
+        if let originalAnonymousId = originalAnonymousId {
+            AvoAnonymousId.setAnonymousId(originalAnonymousId)
+        }
         AvoAnonymousId.clearCache()
         super.tearDown()
     }

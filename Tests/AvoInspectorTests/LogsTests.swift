@@ -4,6 +4,9 @@ import XCTest
 final class LogsTests: XCTestCase {
 
     func test_logsEventParameters_doesNotCrash() {
+        let initialLoggingState = AvoInspector.isLogging()
+        defer { AvoInspector.setLogging(initialLoggingState) }
+
         let sut = AvoInspector(apiKey: "apiKey", env: .dev)
         AvoInspector.setLogging(true)
 
@@ -19,6 +22,9 @@ final class LogsTests: XCTestCase {
     }
 
     func test_loggingCanBeToggled() {
+        let initialLoggingState = AvoInspector.isLogging()
+        defer { AvoInspector.setLogging(initialLoggingState) }
+
         AvoInspector.setLogging(true)
         XCTAssertTrue(AvoInspector.isLogging())
 

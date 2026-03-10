@@ -41,11 +41,11 @@ final class SimpleTypeSchemaExtractionTests: XCTestCase {
 
     // MARK: - Char type (objCType "c") -> AvoString
 
-    func test_extractChar_producesAvoString() {
+    func test_extractChar_producesAvoInt() {
         let ch = Int8(65)
         let params: [String: Any] = ["char key": NSNumber(value: ch)]
         let schema = sut.extractSchema(params)
-        XCTAssertEqual(schema["char key"], AvoString())
+        XCTAssertEqual(schema["char key"], AvoInt())
     }
 
     // MARK: - Float / Double types

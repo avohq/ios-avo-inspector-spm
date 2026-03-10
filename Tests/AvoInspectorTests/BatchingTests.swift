@@ -44,6 +44,8 @@ final class BatchingTests: XCTestCase {
     }
 
     func test_sendsBatch_whenEventCountReachesBatchSize() {
+        let previousBatchSize = AvoInspector.getBatchSize()
+        defer { AvoInspector.setBatchSize(previousBatchSize) }
         AvoInspector.setBatchSize(10)
 
         let mockHandler = makeMockNetworkHandler()

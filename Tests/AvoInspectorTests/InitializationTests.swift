@@ -3,6 +3,13 @@ import XCTest
 
 final class InitializationTests: XCTestCase {
 
+    override func setUp() {
+        super.setUp()
+        AvoInspector.setLogging(false)
+        AvoInspector.setBatchSize(30)
+        AvoInspector.setBatchFlushSeconds(30)
+    }
+
     func test_initializesWithAppVersion() {
         let sut = AvoInspector(apiKey: "apiKey", env: .prod)
         let appVersion = sut.appVersion

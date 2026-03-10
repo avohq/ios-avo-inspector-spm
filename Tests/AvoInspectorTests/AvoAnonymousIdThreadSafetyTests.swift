@@ -4,9 +4,13 @@ import XCTest
 final class AvoAnonymousIdThreadSafetyTests: XCTestCase {
 
     func test_concurrentAnonymousIdAccess_returnsConsistentValue() {
-        var results = [String](repeating: "", count: 100)
-        DispatchQueue.concurrentPerform(iterations: 100) { i in
-            results[i] = AvoAnonymousId.anonymousId()
+        var results = [String]()
+        let lock = NSLock()
+        DispatchQueue.concurrentPerform(iterations: 100) { _ in
+            let value = AvoAnonymousId.anonymousId()
+            lock.lock()
+            results.append(value)
+            lock.unlock()
         }
         let uniqueValues = Set(results)
         XCTAssertEqual(uniqueValues.count, 1, "All concurrent calls should return the same value")

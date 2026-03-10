@@ -108,8 +108,11 @@ final class AvoEventValidatorTests: XCTestCase {
         let resp = makeResponse(events: [entry])
 
         let result = AvoEventValidator.validateEvent(["prop": "d"], specResponse: resp)
-        XCTAssertNotNil(result)
-        XCTAssertNotNil(result?.propertyResults["prop"])
+        guard let propResult = result?.propertyResults["prop"] else {
+            XCTFail("Expected property result for prop")
+            return
+        }
+        XCTAssertTrue(propResult.failedEventIds?.contains("evt1") == true)
     }
 
     // MARK: - Regex patterns
@@ -131,8 +134,11 @@ final class AvoEventValidatorTests: XCTestCase {
         let resp = makeResponse(events: [entry])
 
         let result = AvoEventValidator.validateEvent(["prop": "abc"], specResponse: resp)
-        XCTAssertNotNil(result)
-        XCTAssertNotNil(result?.propertyResults["prop"])
+        guard let propResult = result?.propertyResults["prop"] else {
+            XCTFail("Expected property result for prop")
+            return
+        }
+        XCTAssertTrue(propResult.failedEventIds?.contains("evt1") == true)
     }
 
     // MARK: - Min/max ranges
@@ -143,8 +149,11 @@ final class AvoEventValidatorTests: XCTestCase {
         let resp = makeResponse(events: [entry])
 
         let result = AvoEventValidator.validateEvent(["prop": NSNumber(value: 5)], specResponse: resp)
-        XCTAssertNotNil(result)
-        XCTAssertNotNil(result?.propertyResults["prop"])
+        guard let propResult = result?.propertyResults["prop"] else {
+            XCTFail("Expected property result for prop")
+            return
+        }
+        XCTAssertTrue(propResult.failedEventIds?.contains("evt1") == true)
     }
 
     func test_minMax_failsWhenAboveMax() {
@@ -153,8 +162,11 @@ final class AvoEventValidatorTests: XCTestCase {
         let resp = makeResponse(events: [entry])
 
         let result = AvoEventValidator.validateEvent(["prop": NSNumber(value: 200)], specResponse: resp)
-        XCTAssertNotNil(result)
-        XCTAssertNotNil(result?.propertyResults["prop"])
+        guard let propResult = result?.propertyResults["prop"] else {
+            XCTFail("Expected property result for prop")
+            return
+        }
+        XCTAssertTrue(propResult.failedEventIds?.contains("evt1") == true)
     }
 
     func test_minMax_passesWhenInRange() {
@@ -174,8 +186,11 @@ final class AvoEventValidatorTests: XCTestCase {
         let resp = makeResponse(events: [entry])
 
         let result = AvoEventValidator.validateEvent(["prop": "not a number"], specResponse: resp)
-        XCTAssertNotNil(result)
-        XCTAssertNotNil(result?.propertyResults["prop"])
+        guard let propResult = result?.propertyResults["prop"] else {
+            XCTFail("Expected property result for prop")
+            return
+        }
+        XCTAssertTrue(propResult.failedEventIds?.contains("evt1") == true)
     }
 
     // MARK: - Multi-event merge
@@ -272,7 +287,10 @@ final class AvoEventValidatorTests: XCTestCase {
     }
 
     func test_safeNumberOfMatches_returnsCorrectCount() {
-        let regex = try! NSRegularExpression(pattern: "[0-9]+")
+        guard let regex = try? NSRegularExpression(pattern: "[0-9]+") else {
+            XCTFail("Failed to compile regex pattern")
+            return
+        }
         let count = AvoEventValidator.safeNumberOfMatches(with: regex, in: "abc 123 def 456", timeout: 2.0)
         XCTAssertEqual(count, 2, "Should find 2 matches of [0-9]+ in 'abc 123 def 456'")
     }
@@ -281,7 +299,10 @@ final class AvoEventValidatorTests: XCTestCase {
         // Use a pattern and input that will take a measurable amount of time,
         // combined with a very short timeout (0.001s).
         // We use a complex-but-valid regex on a large string.
-        let regex = try! NSRegularExpression(pattern: "^(a+)+$")
+        guard let regex = try? NSRegularExpression(pattern: "^(a+)+$") else {
+            XCTFail("Failed to compile regex pattern")
+            return
+        }
         // Build a string that causes catastrophic backtracking
         let evilInput = String(repeating: "a", count: 30) + "!"
 
@@ -309,17 +330,24 @@ final class AvoEventValidatorTests: XCTestCase {
     func test_concurrentSafeNumberOfMatches_doesNotDeadlock() {
         // Run 50 concurrent calls to safeNumberOfMatches to verify
         // the shared static dispatch queue does not deadlock.
-        let regex = try! NSRegularExpression(pattern: "[0-9]+")
+        guard let regex = try? NSRegularExpression(pattern: "[0-9]+") else {
+            XCTFail("Failed to compile regex pattern")
+            return
+        }
         let input = "abc 123 def 456"
 
         let group = DispatchGroup()
         let queue = DispatchQueue(label: "test.concurrent", attributes: .concurrent)
+        let resultLock = NSLock()
         var results = [UInt](repeating: 0, count: 50)
 
         for i in 0..<50 {
             group.enter()
             queue.async {
-                results[i] = AvoEventValidator.safeNumberOfMatches(with: regex, in: input, timeout: 0.5)
+                let value = AvoEventValidator.safeNumberOfMatches(with: regex, in: input, timeout: 0.5)
+                resultLock.lock()
+                results[i] = value
+                resultLock.unlock()
                 group.leave()
             }
         }

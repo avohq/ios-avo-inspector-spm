@@ -47,7 +47,9 @@ public typealias AvoEventSpecFetchCompletion = (AvoEventSpecResponse?) -> Void
 
     private func fetchInternal(_ params: AvoFetchEventSpecParams, requestKey: String) {
         guard env == "dev" || env == "staging" else {
-            deliverResult(requestKey, result: nil)
+            DispatchQueue.global(qos: .default).async { [weak self] in
+                self?.deliverResult(requestKey, result: nil)
+            }
             return
         }
 
@@ -98,7 +100,9 @@ public typealias AvoEventSpecFetchCompletion = (AvoEventSpecResponse?) -> Void
 
     private func buildUrl(_ params: AvoFetchEventSpecParams) -> String {
         let path = baseUrl + "/trackingPlan/eventSpec"
-        var components = URLComponents(string: path)!
+        guard var components = URLComponents(string: path) else {
+            return ""
+        }
         components.queryItems = [
             URLQueryItem(name: "apiKey", value: params.apiKey),
             URLQueryItem(name: "streamId", value: params.streamId),

@@ -3,6 +3,16 @@ import XCTest
 
 final class AvoDeduplicatorThreadSafetyTests: XCTestCase {
 
+    override func setUp() {
+        super.setUp()
+        AvoDeduplicator.sharedDeduplicator.clear()
+    }
+
+    override func tearDown() {
+        AvoDeduplicator.sharedDeduplicator.clear()
+        super.tearDown()
+    }
+
     func test_concurrentShouldRegisterEvent_doesNotCrash() {
         let dedup = AvoDeduplicator.sharedDeduplicator
         DispatchQueue.concurrentPerform(iterations: 50) { i in

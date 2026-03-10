@@ -55,11 +55,10 @@ private class AvoStorageImpl: NSObject, AvoStorage {
     @objc public private(set) var apiKey: String
     private var appName: String
 
-    // NOTE: These static vars are intentionally unsynchronized, matching ObjC behavior.
-    // The ObjC code uses plain C statics with no synchronization for these values.
     private static var logging = false
     private static var maxBatchSize: Int32 = 30
     private static var batchFlushTime: Int32 = 30
+    private static let configLock = NSLock()
 
     // From ObjC: `static const NSTimeInterval EVENT_SPEC_FETCH_TIMEOUT = 5.0;`
     private static let eventSpecFetchTimeout: TimeInterval = 5.0
@@ -91,18 +90,26 @@ private class AvoStorageImpl: NSObject, AvoStorage {
     // MARK: - Static Accessors (Inspector protocol)
 
     @objc public static func isLogging() -> Bool {
+        configLock.lock()
+        defer { configLock.unlock() }
         return logging
     }
 
     @objc public static func setLogging(_ isLogging: Bool) {
+        configLock.lock()
+        defer { configLock.unlock() }
         logging = isLogging
     }
 
     @objc public static func getBatchSize() -> Int32 {
+        configLock.lock()
+        defer { configLock.unlock() }
         return maxBatchSize
     }
 
     @objc public static func setBatchSize(_ newBatchSize: Int32) {
+        configLock.lock()
+        defer { configLock.unlock() }
         if newBatchSize < 1 {
             maxBatchSize = 1
         } else {
@@ -111,10 +118,14 @@ private class AvoStorageImpl: NSObject, AvoStorage {
     }
 
     @objc public static func getBatchFlushSeconds() -> Int32 {
+        configLock.lock()
+        defer { configLock.unlock() }
         return batchFlushTime
     }
 
     @objc public static func setBatchFlushSeconds(_ newBatchFlushSeconds: Int32) {
+        configLock.lock()
+        defer { configLock.unlock() }
         batchFlushTime = newBatchFlushSeconds
     }
 

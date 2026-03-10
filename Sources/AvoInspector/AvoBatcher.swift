@@ -115,7 +115,8 @@ import Foundation
         let timeSinceLastFlushAttempt = now - batchFlushAttemptTime
         lock.unlock()
 
-        let sendBySize = batchSize % Int(AvoInspector.getBatchSize()) == 0
+        let configuredBatchSize = max(1, Int(AvoInspector.getBatchSize()))
+        let sendBySize = batchSize > 0 && (batchSize % configuredBatchSize == 0)
         let sendByTime = timeSinceLastFlushAttempt >= Double(AvoInspector.getBatchFlushSeconds())
 
         if sendBySize || sendByTime {
