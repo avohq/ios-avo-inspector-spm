@@ -318,7 +318,7 @@ private class AvoStorageImpl: NSObject, AvoStorage {
     }
 
     @objc public func extractSchema(_ eventParams: [String: Any]) -> [String: AvoEventSchemaType] {
-        if !avoDeduplicator.hasSeenEventParams(eventParams, checkInAvoFunctions: true) {
+        if avoDeduplicator.hasSeenEventParams(eventParams, checkInAvoFunctions: true) {
             NSLog("[avo]     WARNING! You are trying to extract schema shape that was just reported by your Avo functions. This is an indicator of duplicate inspector reporting. Please reach out to support@avo.app for advice if you are not sure how to handle this.")
         }
 

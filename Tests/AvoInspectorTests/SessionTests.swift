@@ -24,6 +24,8 @@ final class SessionTests: XCTestCase {
     }
 
     func test_enterBackground_savesEventsToCache() {
+        let originalBatchSize = AvoInspector.getBatchSize()
+        defer { AvoInspector.setBatchSize(originalBatchSize) }
         // Set large batch size to prevent auto-sending during the test
         AvoInspector.setBatchSize(1000)
 
