@@ -3,6 +3,16 @@ import XCTest
 
 final class SessionTests: XCTestCase {
 
+    override func setUp() {
+        super.setUp()
+        UserDefaults(suiteName: AvoBatcher.suiteKey)?.removeObject(forKey: AvoBatcher.cacheKey)
+    }
+
+    override func tearDown() {
+        UserDefaults(suiteName: AvoBatcher.suiteKey)?.removeObject(forKey: AvoBatcher.cacheKey)
+        super.tearDown()
+    }
+
     func test_enterForeground_triggersPostEvents() {
         let mockHandler = MockNetworkCallsHandler(
             apiKey: "testApiKey", appName: "testApp", appVersion: "1.0",
@@ -18,9 +28,6 @@ final class SessionTests: XCTestCase {
         // Should attempt to post the cached events
         XCTAssertGreaterThanOrEqual(mockHandler.callInspectorCallCount, 1,
                                      "Should post cached events on foreground")
-
-        // Cleanup
-        UserDefaults(suiteName: AvoBatcher.suiteKey)?.removeObject(forKey: AvoBatcher.cacheKey)
     }
 
     func test_enterBackground_savesEventsToCache() {
@@ -44,9 +51,6 @@ final class SessionTests: XCTestCase {
         // Verify events were saved to cache
         let cached = UserDefaults(suiteName: AvoBatcher.suiteKey)?.value(forKey: AvoBatcher.cacheKey)
         XCTAssertNotNil(cached, "Events should be saved to cache on background")
-
-        // Cleanup
-        UserDefaults(suiteName: AvoBatcher.suiteKey)?.removeObject(forKey: AvoBatcher.cacheKey)
     }
 
     func test_inspectorEnterForeground_doesNotCrash() {
