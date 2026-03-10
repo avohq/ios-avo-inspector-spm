@@ -1,0 +1,15 @@
+{
+  "originHash" : "4bee0fdb363d90efe95d467ab0b42aa95225a7e0336bbf96d448a7733f9a7601",
+  "pins" : [
+    {
+      "identity" : "ios-analytics-debugger-spm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/avohq/ios-analytics-debugger-spm",
+      "state" : {
+        "revision" : "d5c134c54052733afe425b357b47ec080484ed88",
+        "version" : "1.5.0"
+      }
+    }
+  ],
+  "version" : 3
+}
