@@ -178,6 +178,9 @@ import Foundation
                 metadataDict["sourceId"] = sourceId
             }
             baseBody["eventSpecMetadata"] = metadataDict
+            if !metadata.branchId.isEmpty {
+                baseBody["validatedBranchId"] = metadata.branchId
+            }
         }
 
         return baseBody
