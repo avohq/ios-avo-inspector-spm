@@ -11,3 +11,6 @@ DerivedData/
 /Cartfile*
 /planning/
 /fester/
+
+# Example app secrets
+Example/SpmSandbox/Secrets.swift
